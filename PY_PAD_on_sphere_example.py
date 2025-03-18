@@ -53,16 +53,25 @@ values_prec_volume2=values2/1000.0*grid_point_area_size
 # Calculate PAD results using a 3000 km cutoff distance (the cutoff distance needs to be specified in meters)
 # ------------------------------------------------------------------------------------------------------------------------
 
+# In this example, since both fields are defined on the same grid, we use the function 
+# calculate_PAD_on_sphere_results_assume_same_grid(lats, lons, values_prec_volume1,  values_prec_volume2, distance_cutoff) 
+# to calculate the results. 
+#
+# In the case when the fields are defined on different grids, one can instead use the function 
+# calculate_PAD_results_assume_different_grid(lats1, lons1, values_prec_volume1, lats2, lons2, values_prec_volume2, distance_cutoff)
+# to calculate the results.
+
 [PAD_attributions, non_attributed_values1, non_attributed_values2] = calculate_PAD_on_sphere_results_assume_same_grid(lats, lons, values_prec_volume1, values_prec_volume2, distance_cutoff = 3000*1000)
 
-# The PAD_attributions array contains the data on all attributions, with the first column representing 
-# the attributed distances, the second column the attributed amounts, the third column the index of the associated grid point 
-# in the first field, and the fourth column the index of the associated grid point in the second field
-print(PAD_attributions)
+# The PAD_attributions array contains the data on all attributions. 
+# The dimension of the array is (number_of_all_attributions,4) with 
+# -  PAD_attributions(:,0) being the attributed distances 
+# -  PAD_attributions(:,1) being the attributed amounts 
+# -  PAD_attributions(:,2) being the indexes of the associated grid point in the first field
+# -  PAD_attributions(:,3) being the indexes of the associated grid point in the second field
 
-# The non_attributed_values1 and non_attributed_values2 arrays contain the data about precipitation that was not attributed
-print(non_attributed_values1)
-print(non_attributed_values2)
+# The non_attributed_values1 and non_attributed_values2 arrays contain the data about precipitation that was not attributed.
+# Both arrays are one-dimensional with the dimension equal to the values_prec_volume1 and values_prec_volume2 arrays, respectively
 
 # ------------------------------------------------------------------------------------------------------------------------
 # Calculate the PAD distance value - the result is in meters
