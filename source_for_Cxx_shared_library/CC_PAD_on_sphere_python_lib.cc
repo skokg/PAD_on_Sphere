@@ -34,7 +34,7 @@ long random_number_seed=-1;
 #include "CU_utils_subset.cc"
 #include "CU_PAD_on_sphere_code.cc"
 
-vector <vector <double> > lat_lon_value_arrays_to_XYZ_points(const double *lat, const double *lon, const double *values, size_t size)
+vector <vector <double> > lat_lon_value_arrays_to_XYZ_points(const double * const lat, const double * const lon, const double * const values, const size_t size)
 	{
 	vector <vector <double> > points;
 	for (size_t il = 0; il < size; il++)
@@ -51,7 +51,7 @@ extern "C" void free_mem_double_array(double* a)
 	delete[] a;
 	}
 
-extern "C"  double * calculate_PAD_results_assume_same_grid_ctypes(const double *lat, const double *lon, const double *values1, const double *values2, size_t size, size_t *number_of_attributions, double attribution_distance_cutoff)
+extern "C"  double * calculate_PAD_results_assume_same_grid_ctypes(const double * const lat, const double * const lon, const double * const values1, const double * const values2, const size_t size, size_t * const number_of_attributions, const double attribution_distance_cutoff)
 	{
     vector <vector <double> > points1 =  lat_lon_value_arrays_to_XYZ_points(lat,lon,values1, size);
     vector <vector <double> > points2 =  lat_lon_value_arrays_to_XYZ_points(lat,lon,values2, size);
@@ -81,7 +81,7 @@ extern "C"  double * calculate_PAD_results_assume_same_grid_ctypes(const double 
 	return(out_arr);
 	}
 
-extern "C"  double * calculate_PAD_results_assume_different_grid_ctypes(const double *lat1, const double *lon1, const double *values1, size_t size1, const double *lat2, const double *lon2, const double *values2, size_t size2, size_t *number_of_attributions, double attribution_distance_cutoff)
+extern "C"  double * calculate_PAD_results_assume_different_grid_ctypes(const double * const lat1, const double * const lon1, const double * const values1, const size_t size1, const double * const lat2, const double * const lon2, const double * const values2, const size_t size2, size_t * const number_of_attributions, const double attribution_distance_cutoff)
 	{
     vector <vector <double> > points1 =  lat_lon_value_arrays_to_XYZ_points(lat1,lon1,values1, size1);
     vector <vector <double> > points2 =  lat_lon_value_arrays_to_XYZ_points(lat2,lon2,values2, size2);
