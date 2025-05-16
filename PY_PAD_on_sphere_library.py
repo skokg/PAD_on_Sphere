@@ -1,4 +1,6 @@
 import numpy as np
+import xarray as xr
+import pandas as pd
 import os
 from ctypes import *
 
@@ -213,26 +215,29 @@ def calculate_attributions_from_numpy(
 
     c_number_of_attributions = c_size_t()
 
+    ngridpoints1 = lat1.shape[0]
     if same_grid:
+        ngridpoints2 = ngridpoints1
         results = libc.calculate_PAD_results_assume_same_grid_ctypes(
             lat1,
             lon1,
             values1,
             values2,
-            lat1.shape[0],
+            npoints1,
             byref(c_number_of_attributions),
             distance_cutoff,
         )
     else:
+        ngridpoints2 = lat2.shape[0]
         results = libc.calculate_PAD_results_assume_different_grid_ctypes(
             lat1,
             lon1,
             values1,
-            lat1.shape[0],
+            ngridpoints1,
             lat2,
             lon2,
             values2,
-            lat2.shape[0],
+            ngridpoints2,
             byref(c_number_of_attributions),
             distance_cutoff,
         )
@@ -240,21 +245,16 @@ def calculate_attributions_from_numpy(
     number_of_attributions = c_number_of_attributions.value
 
     # Deserialize
-    nlat1 = lat1.shape[0]
-    if same_grid:
-        nlat2 = nlat1
-    else:
-        nlat2 = lat2.shape[0]
     attributions = np.asarray(results[0 : number_of_attributions * 4]).reshape(
         number_of_attributions, -1
     )
     non_attributed_values1 = np.asarray(
-        results[(number_of_attributions * 4) : (number_of_attributions * 4 + nlat1)]
+        results[(number_of_attributions * 4) : (number_of_attributions * 4 + ngridpoints1)]
     )
     non_attributed_values2 = np.asarray(
         results[
-            (number_of_attributions * 4 + nlat1) : (
-                number_of_attributions * 4 + nlat1 + nlat2
+            (number_of_attributions * 4 + ngridpoints1) : (
+                number_of_attributions * 4 + ngridpoints1 + ngridpoints2
             )
         ]
     )
@@ -272,3 +272,178 @@ def calculate_PAD_on_sphere_from_attributions(PAD_attributions):
     return np.sum(PAD_attributions[:, 0] * PAD_attributions[:, 1]) / np.sum(
         PAD_attributions[:, 1]
     )
+
+
+def calculate_attributions_from_xarrays(fcst, obs, area, area2=None, same_grid=True, cutoff=3000, residual_as_df=False):
+    """Compute Precipitation Attributions (i.e. the Optimal Transport Plan) with the PAD-on-sphere method (Skok and Lledó 2025) from xarray datasets.
+
+    :param xarray fcst: should contain tp in mm.
+    :param xarray obs: should contain tp in mm.
+    :param xarray area: fcst grid cell area in km^2.
+    :param xarray area2: obs grid cell area in km^2, if same_grid is False.
+    :param int cutoff: cutoff distance in km.
+
+    :return: a pandas dataframes with attributed precipitation and an xarray or dataframe with unattributed precipitation.
+
+    """
+    if same_grid:
+        area2 = area
+
+    # Check input data
+    if not isinstance(fcst, xr.DataArray):
+        print("fcst should be an xarray DataArray")
+        return None
+    if not isinstance(obs, xr.DataArray):
+        print("obs should be an xarray DataArray")
+        return None
+    if not isinstance(area, xr.DataArray):
+        print("area should be an xarray DataArray")
+        return None
+    if not isinstance(area2, xr.DataArray):
+        print("area2  should be an xarray DataArray")
+        return None
+
+    if not fcst.dims == ("gridpoint", ):
+        print("fcst should have (only) a gridpoint dimension")
+        return None
+    if not obs.dims == ("gridpoint", ):
+        print("obs should have (only) a gridpoint dimension")
+        return None
+    if not area.dims == ("gridpoint", ):
+        print("area should have (only) a gridpoint dimension")
+        return None
+    if not area2.dims == ("gridpoint", ):
+        print("area2 should have (only) a gridpoint dimension")
+        return None
+
+    if fcst.sizes != area.sizes:
+        print("The area and fcst DataArrays are not aligned")
+        return None
+    if obs.sizes != area2.sizes:
+        print("The area2 and obs DataArrays are not aligned")
+        return None
+
+    # Compute water volume (in m^3) from tp (or height in mm) and grid-cell area (in km^2)
+    # vol_in_m3 = fcst_in_mm / 1000 * area_in_km2 * 1000 * 1000
+    fcst = fcst * area * 1000
+    obs = obs * area2 * 1000
+
+    # Convert cutoff from km to m
+    # cast distance to float64 and ensure it is positive
+    cutoff = np.float64(cutoff)
+    cutoff *= 1000
+    if cutoff <= 0:
+        print("ERROR: negative cutoff not allowed")
+        return None
+
+    # Check for negative values
+    if (fcst<0).any() or (obs<0).any():
+        print("ERROR: negative values not allowed")
+        return None
+    # Check for nan, inf and a positive sum.
+    total_fcst = fcst.sum(skipna=False)
+    total_obs = obs.sum(skipna=False)
+    if total_fcst <= 0 or total_obs <= 0: 
+        print("ERROR: all-zero fields not allowed")
+        return None
+    if total_fcst.isnull() or total_obs.isnull(): 
+        print("ERROR: NaN values not allowed")
+        return None
+    if total_fcst == np.inf or total_obs == np.inf: 
+        print("ERROR: infinite values not allowed")
+        return None
+
+    # Cast the data to C_contiguous float64 type
+    fcst = fcst.astype("float64", order="C")
+    fcst['lat'] = fcst.lat.astype("float64", order="C")
+    fcst['lon'] = fcst.lon.astype("float64", order="C")
+    obs = obs.astype("float64", order="C")
+    obs['lat'] = obs.lat.astype("float64", order="C")
+    obs['lon'] = obs.lon.astype("float64", order="C")
+
+    c_number_of_attributions = c_size_t()
+
+    ngridpoints1 = fcst.sizes["gridpoint"]
+    ngridpoints2 = obs.sizes["gridpoint"]
+
+    if same_grid:
+        results = libc.calculate_PAD_results_assume_same_grid_ctypes(
+            fcst.lat.values,
+            fcst.lon.values,
+            fcst.values,
+            obs.values,
+            ngridpoints1,
+            byref(c_number_of_attributions),
+            cutoff,
+        )
+    else:
+        results = libc.calculate_PAD_results_assume_different_grid_ctypes(
+            lat1,
+            lon1,
+            values1,
+            ngridpoints1,
+            lat2,
+            lon2,
+            values2,
+            ngridpoints2,
+            byref(c_number_of_attributions),
+            distance_cutoff,
+        )
+
+    number_of_attributions = c_number_of_attributions.value
+
+    # Deserialize
+    attributions = np.asarray(results[0 : number_of_attributions * 4]).reshape(
+        number_of_attributions, -1
+    )
+    non_attributed_values1 = np.asarray(
+        results[(number_of_attributions * 4) : (number_of_attributions * 4 + ngridpoints1)]
+    )
+    non_attributed_values2 = np.asarray(
+        results[
+            (number_of_attributions * 4 + ngridpoints1) : (
+                number_of_attributions * 4 + ngridpoints1 + ngridpoints2
+            )
+        ]
+    )
+
+    libc.free_mem_double_array(results)
+
+    # Create a dataframe with the transport plan
+    transportplan_df = pd.DataFrame(
+        attributions,
+        columns=["distance_m", "volume_m3", "gridpoint_fcst", "gridpoint_obs"],
+    )
+    # Round distance and gridpoint columns to integer
+    transportplan_df[["distance_m", "gridpoint_fcst", "gridpoint_obs"]] = (
+        transportplan_df[["distance_m", "gridpoint_fcst", "gridpoint_obs"]].astype(int)
+    )
+
+    # Compute residual error as fcst_nonattributed - obs_nonattributed
+    if same_grid:
+        residual_error = xr.Dataset(
+            data_vars=dict(
+                error=(["gridpoint"], (non_attributed_values1 - non_attributed_values2)),
+            ),
+            coords={
+                "gridpoint": fcst.gridpoint,
+                "lat": fcst.lat,
+                "lon": fcst.lon,
+            },
+        )
+
+        # Convert residual error back from volume (in m^3) to height (in mm)
+        # error_mm = error_m3 / (area_km2 * 1000 * 1000) * 1000
+        residual_error /= (area * 1000)
+
+        # Conversion of residual error to pandas df
+        if residual_as_df:
+            residual_error = residual_error.to_dataframe()
+            residual_error = residual_df[residual_df.error != 0]
+
+    else:
+        print("Not implemented yet")
+        # This has to be better implemented!!!!
+        return (transportplan_df, list(non_attributed_values1, non_attributed_values2))
+
+    return (transportplan_df, residual_error)
