@@ -223,7 +223,7 @@ def calculate_attributions_from_numpy(
             lon1,
             values1,
             values2,
-            npoints1,
+            ngridpoints1,
             byref(c_number_of_attributions),
             distance_cutoff,
         )
