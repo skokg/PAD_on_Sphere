@@ -271,7 +271,7 @@ plt.close()
 # Visualize non-attributed precipitation in an Orthographic projection
 # ------------------------------------------------------------------------------------------------------------------------
 
-# Divide the non_attributed_values with area size and multiply by 100 to convert from precipitation volume to precipitation height in mm
+# Divide the non_attributed_values with area size and multiply by 1000 to convert from precipitation volume to precipitation height in mm
 non_attributed_values_height1 = non_attributed_values1 / grid_point_area_size * 1000
 non_attributed_values_height2 = non_attributed_values2 / grid_point_area_size * 1000
 

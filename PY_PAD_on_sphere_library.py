@@ -442,8 +442,7 @@ def calculate_attributions_from_xarrays(fcst, obs, area, area2=None, same_grid=T
             residual_error = residual_df[residual_df.error != 0]
 
     else:
-        print("Not implemented yet")
-        # This has to be better implemented!!!!
+        # This has to be revised
         return (transportplan_df, list(non_attributed_values1, non_attributed_values2))
 
     return (transportplan_df, residual_error)
