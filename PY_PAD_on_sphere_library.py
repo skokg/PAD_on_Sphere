@@ -5,11 +5,7 @@ import os
 from ctypes import *
 
 # -----------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------
-
-Earth_radius = 6371.0 * 1000.0
-
-# -----------------------------------------------------------------------------------------------------
+# Definitions for the C++ library calls
 # -----------------------------------------------------------------------------------------------------
 
 # search for the PAD C++ shared library file (PAD_on_sphere_Cxx_shared_library.so) in the same folder
@@ -48,63 +44,11 @@ libc.calculate_PAD_results_assume_different_grid_ctypes.argtypes = [
 libc.calculate_PAD_results_assume_different_grid_ctypes.restype = POINTER(c_double)
 
 # -----------------------------------------------------------------------------------------------------
+# Numpy wrapper functions
 # -----------------------------------------------------------------------------------------------------
 
-
-def check_input_array(f, name):
-
-    # test if fields are numpy arrays
-    if type(f) is not np.ndarray:
-        print(
-            "ERROR: the "
-            + name
-            + ' input array is not a numpy array of type numpy.ndarray, which is not permitted! Perhaps it is a masked arrays, which is also not permitted. Returning "None" as result!'
-        )
-        return False
-
-    # check dimensions of fields
-    if f.ndim != 1:
-        print(
-            "ERROR: the "
-            + name
-            + ' input array is not one-dimensional, which is not permitted!. Returning "None" as result!'
-        )
-        return False
-
-    # check if the array has some elements
-    if f.size == 0:
-        print(
-            "ERROR: the "
-            + name
-            + ' array does not contain any elements. Returning "None" as result!'
-        )
-        return False
-
-    # detect non-numeric values
-    result = np.where(np.isfinite(f) == False)
-    if len(result[0]) > 0:
-        print(
-            "ERROR: the "
-            + name
-            + ' arrays contains some non-numeric values, which is not permitted!. Returning "None" as result!'
-        )
-        return False
-
-    # detect masked array
-    if isinstance(f, np.ma.MaskedArray):
-        print(
-            "ERROR: the "
-            + name
-            + ' array is a masked array which is not permitted. Returning "None" as result!'
-        )
-        return False
-
-    return True
-
-
-# -----------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------
-
+# Constant used for the Numpy examples
+Earth_radius = 6371.0 * 1000.0
 
 def calculate_attributions_from_numpy(
     values1,
@@ -277,9 +221,6 @@ def calculate_attributions_from_numpy(
 
     return [attributions, non_attributed_values1, non_attributed_values2]
 
-
-
-
 def calculate_PAD_on_sphere_from_attributions(PAD_attributions):
     """Compute the volume-weighted mean of the attribution distances.
 
@@ -292,7 +233,66 @@ def calculate_PAD_on_sphere_from_attributions(PAD_attributions):
         PAD_attributions[:, 1]
     )
 
+def check_input_array(f, name):
+    """Check the input numpy arrays for the right dimension and contents.
+
+    :param ndarray f: a numpy array.
+    :param str name: the name of the parameter.
+
+    :return: True if all tests successful, otherwise False.
+
+    """
+
+    # test if fields are numpy arrays
+    if type(f) is not np.ndarray:
+        print(
+            "ERROR: the "
+            + name
+            + ' input array is not a numpy array of type numpy.ndarray, which is not permitted! Perhaps it is a masked arrays, which is also not permitted. Returning "None" as result!'
+        )
+        return False
+
+    # check dimensions of fields
+    if f.ndim != 1:
+        print(
+            "ERROR: the "
+            + name
+            + ' input array is not one-dimensional, which is not permitted!. Returning "None" as result!'
+        )
+        return False
+
+    # check if the array has some elements
+    if f.size == 0:
+        print(
+            "ERROR: the "
+            + name
+            + ' array does not contain any elements. Returning "None" as result!'
+        )
+        return False
+
+    # detect non-numeric values
+    result = np.where(np.isfinite(f) == False)
+    if len(result[0]) > 0:
+        print(
+            "ERROR: the "
+            + name
+            + ' arrays contains some non-numeric values, which is not permitted!. Returning "None" as result!'
+        )
+        return False
+
+    # detect masked array
+    if isinstance(f, np.ma.MaskedArray):
+        print(
+            "ERROR: the "
+            + name
+            + ' array is a masked array which is not permitted. Returning "None" as result!'
+        )
+        return False
+
+    return True
+
 # -----------------------------------------------------------------------------------------------------
+# Xarray wrapper functions
 # -----------------------------------------------------------------------------------------------------
 
 def calculate_attributions_from_xarrays(fcst, obs, area, area2=None, same_grid=True, cutoff=3000, residual_as_df=False):
