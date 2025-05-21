@@ -278,15 +278,22 @@ def calculate_attributions_from_numpy(
     return [attributions, non_attributed_values1, non_attributed_values2]
 
 
-# -----------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------
 
 
 def calculate_PAD_on_sphere_from_attributions(PAD_attributions):
+    """Compute the volume-weighted mean of the attribution distances.
+
+    :param ndarray PAD_atributions: an array containing distances in the first column and volume in the second column.
+
+    :return: the average PAD value of a list of attributions.
+
+    """
     return np.sum(PAD_attributions[:, 0] * PAD_attributions[:, 1]) / np.sum(
         PAD_attributions[:, 1]
     )
 
+# -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
 
 def calculate_attributions_from_xarrays(fcst, obs, area, area2=None, same_grid=True, cutoff=3000, residual_as_df=False):
     """Compute Precipitation Attributions (i.e. the Optimal Transport Plan) with the PAD-on-sphere method (Skok and Lledó 2025) from xarray datasets.
