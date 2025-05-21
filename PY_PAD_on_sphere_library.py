@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from ctypes import *
 
+
 # -----------------------------------------------------------------------------------------------------
 # Definitions for the C++ library calls
 # -----------------------------------------------------------------------------------------------------
@@ -49,6 +50,7 @@ libc.calculate_PAD_results_assume_different_grid_ctypes.restype = POINTER(c_doub
 
 # Constant used for the Numpy examples
 Earth_radius = 6371.0 * 1000.0
+
 
 def calculate_attributions_from_numpy(
     values1,
@@ -221,6 +223,7 @@ def calculate_attributions_from_numpy(
 
     return [attributions, non_attributed_values1, non_attributed_values2]
 
+
 def calculate_PAD_on_sphere_from_attributions(PAD_attributions):
     """Compute the volume-weighted mean of the attribution distances.
 
@@ -232,6 +235,7 @@ def calculate_PAD_on_sphere_from_attributions(PAD_attributions):
     return np.sum(PAD_attributions[:, 0] * PAD_attributions[:, 1]) / np.sum(
         PAD_attributions[:, 1]
     )
+
 
 def check_input_array(f, name):
     """Check the input numpy arrays for the right dimension and contents.
@@ -290,6 +294,7 @@ def check_input_array(f, name):
         return False
 
     return True
+
 
 # -----------------------------------------------------------------------------------------------------
 # Xarray wrapper functions
