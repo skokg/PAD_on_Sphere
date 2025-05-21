@@ -116,6 +116,20 @@ def calculate_attributions_from_numpy(
     same_grid="True",
     distance_cutoff=100 * 1000 * 1000,
 ):
+    """Compute Precipitation Attributions (i.e. the Optimal Transport Plan) with the PAD-on-sphere method (Skok and Lledó 2025) from numpy arrays.
+
+    :param ndarray values1: field1 total precipitation in mm.
+    :param ndarray values2: field2 total precipitation in mm.
+    :param ndarray lat1: latitudes of field1.
+    :param ndarray lon1: longitudes of field1.
+    :param ndarray lat2: latitudes of field2.
+    :param ndarray lon2: longitudes of field2.
+    :param bool same_grid: whether field1 and field2 are in the same grid.
+    :param int distance_cutoff: cutoff distance in m.
+
+    :return: a numpy array with attributed precipitation and two arrays with unattributed precipitation in each field.
+
+    """
 
     if same_grid:
         if (lat2 is not None) or (lon2 is not None):
