@@ -5,7 +5,7 @@
 # Import the PAD Python library
 # The PAD python library file (PY_PAD_library.py) as well as the PAD C++ shared library file (PAD_Cxx_shared_library.so)
 # need to be in the same folder as the script using them
-from PY_PAD_on_sphere_library import *
+from PAD_on_sphere import *
 
 # Import netcdf library
 import netCDF4
