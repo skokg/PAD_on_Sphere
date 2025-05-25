@@ -8,11 +8,12 @@ The underlying code is written in C++, and a Python ctypes-based wrapper is prov
 
 #### Usage:
 
-To see how the package can be used in practice, please refer to the example in the PY_PAD_on_sphere_example.py
+To see how the package can be used in practice, please refer to the jupyter notebook examples.
 
 #### Author:
 
 Gregor Skok, Faculty of Mathematics and Physics, University of Ljubljana, Slovenia
+Llorenç Lledó, ECMWF (for the xarray wrapper and the jupyter notebooks only)
 
 Email: Gregor.Skok@fmf.uni-lj.si
 
