@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def weighted_average(df, data_col, weight_col, by_col):
