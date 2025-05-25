@@ -15,17 +15,13 @@ from netCDF4 import Dataset
 # Read sample netcdf fields - both fields are defined in a regular 0.25 deg lat-lon grid (i.e. same grid)
 # ------------------------------------------------------------------------------------------------------------------------
 
-nc_file_id = Dataset(
-    "PY_PAD_on_sphere_example_field_A.nc", "r"
-)  # prebere natcdf datoteko
+nc_file_id = Dataset("sample_data/example_field_A.nc", "r")
 lon1 = nc_file_id.variables["lon"][:].data
 lat1 = nc_file_id.variables["lat"][:].data
 field1 = nc_file_id.variables["precipitation"][:].data
 nc_file_id.close()
 
-nc_file_id = Dataset(
-    "PY_PAD_on_sphere_example_field_B.nc", "r"
-)  # prebere natcdf datoteko
+nc_file_id = Dataset("sample_data/example_field_B.nc", "r")
 field2 = nc_file_id.variables["precipitation"][:].data
 nc_file_id.close()
 
