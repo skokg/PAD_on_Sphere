@@ -12,7 +12,7 @@ To see how the package can be used in practice, please refer to the jupyter note
 
 #### Author:
 
-Gregor Skok, Faculty of Mathematics and Physics, University of Ljubljana, Slovenia
+Gregor Skok, Faculty of Mathematics and Physics, University of Ljubljana, Slovenia \
 Llorenç Lledó, ECMWF (for the xarray wrapper and the jupyter notebooks only)
 
 Email: Gregor.Skok@fmf.uni-lj.si
