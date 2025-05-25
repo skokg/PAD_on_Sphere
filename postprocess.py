@@ -80,3 +80,33 @@ def get_latlon_df(da):
 
     """
     return da.to_dataset()[["lat", "lon"]].to_dataframe()
+
+
+def compute_regional_stats(distance_ds, residue_ds, reg_masks, area):
+    """Compute location error statistics for several domains.
+
+    :param dataset distance_ds: an xarray Dataset with distance (in m) and volume (in m^3) attributed.
+    :param dataset residue_ds: an xarray Dataset with unattributed precipitation in mm.
+    :param dataarray reg_masks: a boolean xarray DataArray with the region masks, indication which points belong to each of the regions.
+    :param dataarray area: an xarray DataArray indicating the area of each grid cell.
+
+    :return: two xarray Datasets with aggregated values for each region.
+
+    """
+
+    LocationError = (
+        np.abs(distance_ds.dist / 1000)
+        .weighted(distance_ds.volume.fillna(0) * reg_masks)
+        .mean(dim="gridpoint")
+    )
+    ResidualError = (
+        np.abs(residue_ds.error.fillna(0))
+        .weighted(area * reg_masks)
+        .mean(dim="gridpoint")
+    )
+    # Location Error for the region as a Mean Absolute Distance
+    # Residual Error for the region as a MAE
+    LocationError.name = "distance"
+    ResidualError.name = "mae"
+
+    return (LocationError, ResidualError)
