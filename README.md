@@ -10,12 +10,12 @@ The underlying code is written in C++, and a Python ctypes-based wrapper is prov
 
 To see how the package can be used in practice, please refer to the jupyter notebook examples.
 
-#### Author:
+#### Authors:
 
 Gregor Skok, Faculty of Mathematics and Physics, University of Ljubljana, Slovenia \
-Llorenç Lledó, ECMWF (for the xarray wrapper and the jupyter notebooks only)
+LlorenÃ§ LledÃ³, ECMWF (for the xarray/numpy wrappers and the jupyter notebooks)
 
 Email: Gregor.Skok@fmf.uni-lj.si
 
 #### References:
-Gregor Skok & Llorenç Lledó, 2025, Spatial verification of global precipitation forecasts. Preprint. https://arxiv.org/abs/2407.20624
+Skok, G. & LledÃ³, L. (2025) Spatial verification of global precipitation forecasts. Quarterly Journal of the Royal Meteorological Society. Available from: https://doi.org/10.1002/qj.5006
