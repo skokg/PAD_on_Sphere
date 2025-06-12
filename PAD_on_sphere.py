@@ -3,7 +3,7 @@ import xarray as xr
 import pandas as pd
 import os
 from ctypes import *
-
+from PAD_postprocess import aggregate_transportplan_at_gridpoints, get_latlon_df
 
 # -----------------------------------------------------------------------------------------------------
 # Definitions for the C++ library calls
@@ -304,7 +304,7 @@ def check_input_array(f, name):
 
 
 def calculate_attributions_from_xarrays(
-    fcst, obs, area, area2=None, same_grid=True, cutoff=3000, residual_as_df=False
+    fcst, obs, area, area2=None, same_grid=True, cutoff=3000, gridded_output=True
 ):
     """Compute Precipitation Attributions (i.e. the Optimal Transport Plan) with the PAD-on-sphere method (Skok and Lledó 2025) from xarray datasets.
 
@@ -313,8 +313,9 @@ def calculate_attributions_from_xarrays(
     :param xarray area: fcst grid cell area in km^2.
     :param xarray area2: obs grid cell area in km^2, if same_grid is False.
     :param int cutoff: cutoff distance in km.
+    :param bool gridded_output: if True the output is recasted from pandas dataframes to a gridded xarray dataset. Only possible if same_grid=True.
 
-    :return: a pandas dataframes with attributed precipitation and an xarray or dataframe with unattributed precipitation.
+    :return: a list with a pandas dataframe containing all attributions, and additionally, depending on the options: if same_grid=True and gridded_output=True an xarray dataset containing volume transported, distance transported, and residual error in mm at each grid point. if same_grid=True and gridded_output=False, a pandas dataframe with non-attributed precipitation. If same_grid=False, two xarray datasets with non-attributed precipitation from each field. For the gridded outputs, positive distances represent a water export at origin (fcst > obs) and negative distances represent a water import at destination (fcst < obs). Similarly, positive residual errors represent overforecasting (fcst>obs) and viceversa.
 
     """
     if same_grid:
@@ -452,9 +453,9 @@ def calculate_attributions_from_xarrays(
         transportplan_df[["distance_m", "gridpoint_fcst", "gridpoint_obs"]].astype(int)
     )
 
-    # Compute residual error as fcst_nonattributed - obs_nonattributed
     if same_grid:
-        residual_error = xr.Dataset(
+        # Compute residual error as fcst_nonattributed - obs_nonattributed
+        residual_error_ds = xr.Dataset(
             data_vars=dict(
                 error=(
                     ["gridpoint"],
@@ -470,15 +471,50 @@ def calculate_attributions_from_xarrays(
 
         # Convert residual error back from volume (in m^3) to height (in mm)
         # error_mm = error_m3 / (area_km2 * 1000 * 1000) * 1000
-        residual_error /= area * 1000
+        residual_error_ds /= area * 1000
 
-        # Conversion of residual error to pandas df
-        if residual_as_df:
-            residual_error = residual_error.to_dataframe()
-            residual_error = residual_df[residual_df.error != 0]
+        if gridded_output:
+            # Convert the attributions list to a gridded xarray
+            latlon_df = get_latlon_df(obs)
+            transportplan_ds = (
+                aggregate_transportplan_at_gridpoints(transportplan_df, latlon_df)
+                .to_xarray()
+                .set_coords(("lat", "lon"))
+            )
+            gridded_ds = xr.merge((transportplan_ds, residual_error_ds)).drop_vars(
+                "gridpoint"
+            )
+            return (transportplan_df, gridded_ds)
+
+        else:
+            # Conversion of residual error back to pandas df
+            residual_df = residual_error_ds.to_dataframe()
+            residual_df = residual_df[residual_df.error != 0]
+            return (transportplan_df, residual_df)
 
     else:
-        # This has to be revised
-        return (transportplan_df, list(non_attributed_values1, non_attributed_values2))
+        # Create two residual error datasets, one in each grid
+        residual_error_fcst = xr.Dataset(
+            data_vars=dict(error=(["gridpoint"], non_attributed_values1)),
+            coords={
+                "gridpoint": fcst.gridpoint,
+                "lat": fcst.lat,
+                "lon": fcst.lon,
+            },
+        )
 
-    return (transportplan_df, residual_error)
+        residual_error_obs = xr.Dataset(
+            data_vars=dict(error=(["gridpoint"], non_attributed_values2)),
+            coords={
+                "gridpoint": obs.gridpoint,
+                "lat": obs.lat,
+                "lon": obs.lon,
+            },
+        )
+
+        # Convert residual error back from volume (in m^3) to height (in mm)
+        # error_mm = error_m3 / (area_km2 * 1000 * 1000) * 1000
+        residual_error_fcst /= area * 1000
+        residual_error_obs /= area2 * 1000
+
+        return (transportplan_df, residual_error_fcst, residual_error_obs)

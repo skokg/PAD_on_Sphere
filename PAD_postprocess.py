@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import xarray as xr
 
 
 def weighted_average(df, data_col, weight_col, by_col):
@@ -20,7 +21,7 @@ def weighted_average(df, data_col, weight_col, by_col):
     result = g["_data_times_weight"].sum() / total
 
     del df["_data_times_weight"], df["_weight_where_notnull"]
-    return pd.concat([total.rename("volume"), result.rename("dist")], axis=1)
+    return pd.concat([total.rename("volume"), result.rename("distance")], axis=1)
 
 
 def aggregate_transportplan_at_gridpoints(transportplan_df, latlon_df):
@@ -47,11 +48,11 @@ def aggregate_transportplan_at_gridpoints(transportplan_df, latlon_df):
     # We can combine both into a single xarray dataset:
     # * positive distances represent a water source, i.e. water being exported from origin grid point (fcst > obs).
     # * negative distances represent a water sink, i.e. water being imported at destination grid point (fcst < obs).
-    dist_df_at_obs.loc[:, "dist"] = dist_df_at_obs.loc[:, "dist"] * -1
+    dist_df_at_obs.loc[:, "distance"] = dist_df_at_obs.loc[:, "distance"] * -1
     dist_df = pd.concat([dist_df_at_fcst, dist_df_at_obs]).rename_axis("gridpoint")
 
     # We need to aggregated again due to the overlap
-    dist_df = weighted_average(dist_df, "dist", "volume", "gridpoint")
+    dist_df = weighted_average(dist_df, "distance", "volume", "gridpoint")
 
     # add lat lon coordinates to df
     dist_df = pd.merge(
@@ -80,34 +81,33 @@ def get_latlon_df(da):
     :return: a pandas dataframe with gridpoint, lat and lon columns.
 
     """
-    return da.to_dataset()[["lat", "lon"]].to_dataframe()
+    return pd.DataFrame({"lat": da.lat, "lon": da.lon}).rename_axis("gridpoint")
 
 
-def compute_regional_stats(distance_ds, residue_ds, reg_masks, area):
+def compute_regional_stats(gridded_ds, region_masks, area):
     """Compute location error statistics for several domains.
 
-    :param dataset distance_ds: an xarray Dataset with distance (in m) and volume (in m^3) attributed.
-    :param dataset residue_ds: an xarray Dataset with unattributed precipitation in mm.
-    :param dataarray reg_masks: a boolean xarray DataArray with the region masks, indication which points belong to each of the regions.
+    :param dataset gridded_ds: an xarray Dataset with distance (in m), volume (in m^3) attributed, and unattributed precipitation in mm at each gridpoint.
+    :param dataarray region_masks: a boolean xarray DataArray with the region masks, indication which gridpoints belong to each of the regions.
     :param dataarray area: an xarray DataArray indicating the area of each grid cell.
 
-    :return: two xarray Datasets with aggregated values for each region.
+    :return: an xarray Dataset with volume-weighted mean distance and mean absolute error for each region.
 
     """
 
     LocationError = (
-        np.abs(distance_ds.dist / 1000)
-        .weighted(distance_ds.volume.fillna(0) * reg_masks)
+        np.abs(gridded_ds.distance / 1000)
+        .weighted(gridded_ds.volume.fillna(0) * region_masks)
         .mean(dim="gridpoint")
     )
     ResidualError = (
-        np.abs(residue_ds.error.fillna(0))
-        .weighted(area * reg_masks)
+        np.abs(gridded_ds.error.fillna(0))
+        .weighted(area * region_masks)
         .mean(dim="gridpoint")
     )
     # Location Error for the region as a Mean Absolute Distance
     # Residual Error for the region as a MAE
-    LocationError.name = "distance"
+    LocationError.name = "meandistance"
     ResidualError.name = "mae"
 
-    return (LocationError, ResidualError)
+    return xr.merge((LocationError, ResidualError))
