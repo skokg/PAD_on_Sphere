@@ -107,7 +107,7 @@ def compute_regional_stats(gridded_ds, region_masks, area):
     )
     # Location Error for the region as a Mean Absolute Distance
     # Residual Error for the region as a MAE
-    LocationError.name = "meandistance"
-    ResidualError.name = "mae"
+    LocationError.name = "mean_distance"
+    ResidualError.name = "residual_mae"
 
     return xr.merge((LocationError, ResidualError))
