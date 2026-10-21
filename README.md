@@ -4,7 +4,17 @@
 
 The package can be used for calculation of the Precipitation Attribution Distance (PAD) verification metric in a global domain. A detailed description of the methodology is available in the paper listed in the References section. 
 
-The underlying code is written in C++, and a Python ctypes-based wrapper is provided for easy use in the Python environment, either from numpy arrays or xarray DataArrays. A precompiled shared library file is available for easy use with Python on Linux systems (the C++ source code is available in the `source_for_Cxx_shared_library` folder - it can be used to compile the shared library for other types of systems). 
+The underlying code is written in C++, and a Python ctypes-based wrapper is provided for easy use in the Python environment, either from numpy arrays or xarray DataArrays. The C++ source code is in the `source_for_Cxx_shared_library` folder.
+
+#### Building:
+
+The shared library is not included in the repository. Build it with a C++ compiler before using the package:
+
+```bash
+make
+```
+
+This creates `PAD_on_sphere_Cxx_shared_library.so` next to `PAD_on_sphere.py`, where the wrapper loads it from. Use `make CXX=clang++` for another compiler, and `make clean` to remove the library. Rebuild after updating the C++ sources.
 
 #### Usage:
 

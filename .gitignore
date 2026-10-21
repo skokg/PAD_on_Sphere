@@ -1,8 +1,8 @@
 # Compiled shared library: build it from source_for_Cxx_shared_library/
 *.so
 
-# Local build script (ECMWF-specific)
-source_for_Cxx_shared_library/makefile
+# Site-specific Makefile settings
+local.mk
 
 # Python / Jupyter caches
 __pycache__/

@@ -13,6 +13,7 @@
 
 ## Changes by Llorenç Lledó (on top)
 - Removed compiled `.so` from the repo; added `.gitignore`
+- `Makefile` to build the `.so` (`make`); replaces `HOW_TO_COMPILE.txt`; README build instructions
 - **Undoes Gregor's change:** restored `gridded_output=True` (default) instead of `residual_as_df`
 - **Undoes Gregor's change:** restored the 3-tuple return for different grids, residuals in mm
 - **Undoes Gregor's change:** `distance_m` stored as int64 again (saves output storage)
