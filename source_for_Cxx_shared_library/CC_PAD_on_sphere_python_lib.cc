@@ -1,5 +1,4 @@
-// Linux build (ABI version 3; rebuild the shared library with this wrapper):
-// g++ -std=c++11 -fopenmp -O2 -Wall -shared -fPIC -o PAD_on_sphere_Cxx_shared_library.so CC_PAD_on_sphere_python_lib.cc
+// Build with `make` from the repository root (ABI version 3; rebuild after changing this wrapper).
 #include <iostream>
 #include <algorithm>
 #include <vector>
