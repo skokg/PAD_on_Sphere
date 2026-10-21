@@ -11,7 +11,7 @@
 
 CXX ?= g++
 # Base flags, always used; CXXFLAGS from the command line or environment is appended
-BASE_CXXFLAGS := -O2 -Wall -Wno-unused-result
+BASE_CXXFLAGS := -std=c++11 -O2 -Wall -Wno-unused-result
 # -shared builds a shared library (.so) that ctypes can load, instead of an executable; -fPIC is required for it
 LIB_FLAGS := -shared -fPIC
 
