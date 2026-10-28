@@ -1,0 +1,9 @@
+# Compiled shared library: build it from source_for_Cxx_shared_library/
+*.so
+
+# Site-specific Makefile settings
+local.mk
+
+# Python / Jupyter caches
+__pycache__/
+.ipynb_checkpoints/
